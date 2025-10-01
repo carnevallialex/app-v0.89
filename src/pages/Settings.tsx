@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Plus, Search, CreditCard as Edit2, Trash2, Shield, User, Mail, Clock, Settings as SettingsIcon, Users, LogOut, FileText, Database, Package, ChevronRight, UserCog, Palette, Archive, Building } from 'lucide-react';
+import { Plus, Search, CreditCard as Edit2, Trash2, Shield, User, Mail, Clock, Settings as SettingsIcon, Users, LogOut, FileText, Database, Package, ChevronRight, UserCog, Palette, Archive, Building, Cloud } from 'lucide-react';
 import { useAuth, User as UserType } from '../contexts/AuthContext';
 import UserModal from '../components/UserModal';
 import PDFSettingsModal from '../components/PDFSettingsModal';
 import CompanySettingsModal from '../components/CompanySettingsModal';
 import ImportExportModal from '../components/ImportExportModal';
 import ProductSettingsModal from '../components/ProductSettingsModal';
+import { SyncSettingsModal } from '../components/SyncSettingsModal';
 
 const Settings: React.FC = () => {
   const { users, user: currentUser, deleteUser, logout } = useAuth();
@@ -16,6 +17,7 @@ const Settings: React.FC = () => {
   const [isCompanyModalOpen, setIsCompanyModalOpen] = useState(false);
   const [isImportExportModalOpen, setIsImportExportModalOpen] = useState(false);
   const [isProductSettingsModalOpen, setIsProductSettingsModalOpen] = useState(false);
+  const [isSyncSettingsModalOpen, setIsSyncSettingsModalOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<'users' | 'system' | null>(null);
 
   const filteredUsers = users.filter(user =>
@@ -97,6 +99,14 @@ const Settings: React.FC = () => {
   ];
 
   const systemSubItems = [
+    {
+      id: 'sync',
+      title: 'Sincronização e Nuvem',
+      description: 'Configurar armazenamento local ou sincronização com nuvem',
+      icon: Cloud,
+      color: 'text-sky-600',
+      action: () => setIsSyncSettingsModalOpen(true)
+    },
     {
       id: 'pdf',
       title: 'Configurações de PDF',
@@ -435,6 +445,14 @@ const Settings: React.FC = () => {
       {/* Modal de Configurações de Produtos */}
       {isProductSettingsModalOpen && (
         <ProductSettingsModal onClose={() => setIsProductSettingsModalOpen(false)} />
+      )}
+
+      {/* Modal de Configurações de Sincronização */}
+      {isSyncSettingsModalOpen && (
+        <SyncSettingsModal
+          isOpen={isSyncSettingsModalOpen}
+          onClose={() => setIsSyncSettingsModalOpen(false)}
+        />
       )}
     </div>
   );

@@ -1,6 +1,7 @@
 import React from 'react';
-import { Home, Users, Briefcase, DollarSign, Hammer, Package, Wrench, BarChart3, Settings, LogOut } from 'lucide-react';
+import { Home, Users, Briefcase, DollarSign, Hammer, Package, Wrench, BarChart3, Settings, LogOut, Wifi, WifiOff, Cloud } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { getStorageManager } from '../lib/storage';
 
 interface SidebarProps {
   currentPage: string;
@@ -9,7 +10,35 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage }) => {
   const { user, logout } = useAuth();
-  
+  const [isOnline, setIsOnline] = React.useState(navigator.onLine);
+  const [syncStatus, setSyncStatus] = React.useState<any>(null);
+
+  React.useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    const updateSyncStatus = () => {
+      try {
+        const manager = getStorageManager();
+        setSyncStatus(manager.getSyncStatus());
+      } catch (error) {
+        console.error('Failed to get sync status:', error);
+      }
+    };
+
+    updateSyncStatus();
+    const interval = setInterval(updateSyncStatus, 5000);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+      clearInterval(interval);
+    };
+  }, []);
+
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
     { id: 'clients', label: 'Clientes', icon: Users },
@@ -72,6 +101,38 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage }) => {
       </nav>
       
       <div className="absolute bottom-0 left-0 right-0 p-6 border-t border-amber-700/50 bg-gradient-to-t from-amber-900/50 space-y-3">
+        {syncStatus && (
+          <div className="mb-2 px-3 py-2 bg-amber-800/30 rounded-lg border border-amber-700/30">
+            <div className="flex items-center justify-between text-xs">
+              <div className="flex items-center space-x-2">
+                {isOnline ? (
+                  <Wifi className="h-3 w-3 text-green-400" />
+                ) : (
+                  <WifiOff className="h-3 w-3 text-orange-400" />
+                )}
+                <span className="text-amber-100">
+                  {isOnline ? 'Online' : 'Offline'}
+                </span>
+              </div>
+              <div className="flex items-center space-x-1">
+                {syncStatus.provider === 'local' ? (
+                  <span className="text-amber-200">Local</span>
+                ) : (
+                  <>
+                    <Cloud className="h-3 w-3 text-blue-400" />
+                    <span className="text-amber-200">Nuvem</span>
+                  </>
+                )}
+              </div>
+            </div>
+            {syncStatus.pendingOperations > 0 && (
+              <div className="mt-1 text-xs text-amber-300">
+                {syncStatus.pendingOperations} pendente{syncStatus.pendingOperations > 1 ? 's' : ''}
+              </div>
+            )}
+          </div>
+        )}
+
         <button
           onClick={logout}
           className="w-full flex items-center space-x-3 px-4 py-3 text-left transition-all duration-300 rounded-xl hover:bg-red-600/70 hover:shadow-lg text-amber-100 hover:text-white"
@@ -79,7 +140,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage }) => {
           <LogOut className="h-5 w-5 flex-shrink-0" />
           <span className="font-medium text-sm">Sair do Sistema</span>
         </button>
-        
+
         <div className="text-center text-amber-200/80">
           <p className="text-xs">Sistema de Gestão</p>
           <p className="text-xs">v1.0.0</p>
